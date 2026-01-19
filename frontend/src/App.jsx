@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import "./App.css";
 
-const API = "https://ticket-reservation-q1xi.vercel.app";
+const API = "https://ticket-reservation-q1xi.vercel.app/api";
 
 function App() {
   const [event, setEvent] = useState([]);
