@@ -8,8 +8,6 @@ const router = express.Router();
 
 router.post("/", async (req, res) => {
   const { userEmail, eventId, seatsRequired } = req.body;
-  const session = await mongoose.startSession();
-  session.startTransaction();
 
   try {
     const event = await Event.findOneAndUpdate(
@@ -20,28 +18,19 @@ router.post("/", async (req, res) => {
         },
       },
       { $inc: { availableSeats: -seatsRequired } },
-      { new: true, session },
+      { new: true },
     );
 
     if (!event) throw new Error("seats not available");
-    await booking.create(
-      [
-        {
-          userEmail,
-          eventId,
-          seatsBooked: seatsRequired,
-          totalAmount: event.price * seatsRequired,
-        },
-      ],
-      { session },
-    );
-    await session.commitTransaction();
+    await booking.create({
+      userEmail,
+      eventId,
+      seatsBooked: seatsRequired,
+      totalAmount: event.price * seatsRequired,
+    });
     res.json({ success: true, remainingSeats: event.availableSeats });
   } catch (err) {
-    await session.abortTransaction();
     res.status(400).json({ error: err.message });
-  } finally {
-    session.endSession();
   }
 });
 module.exports = router;
