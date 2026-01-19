@@ -7,10 +7,33 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-mongoose.connect(process.env.MONGO_URI)
-.then(()=>{
-    console.log("MongoDB Connected")
-})
+// MongoDB connection with serverless optimization
+let isConnected = false;
+
+const connectDB = async () => {
+  if (isConnected) {
+    console.log("Using existing database connection");
+    return;
+  }
+  
+  try {
+    const db = await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000,
+    });
+    isConnected = db.connections[0].readyState === 1;
+    console.log("MongoDB Connected");
+  } catch (error) {
+    console.error("MongoDB connection error:", error);
+    throw error;
+  }
+};
+
+// Ensure connection before handling requests
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
+
 app.use("/api/events", require("./routes/events"))
 app.use("/api/book", require("./routes/books"))
 
